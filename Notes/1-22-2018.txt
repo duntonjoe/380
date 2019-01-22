@@ -1,0 +1,125 @@
+1-22-2018
+----------
+Go To Mac Lab on thursdays.
+
+					C Boot Camp:
+Basics:
+	Pointers/Arrays/Structs/Casting
+	Memory Management
+	Function Pointers/Generic Types
+	Strings
+	GrabBag(Macros,typedefs, header guards/files, etc)
+
+Pointers:
+	-stores add of a value in mem ( eg int*, char*, int**, etc)
+	-Deref of (a*) can be used to read or write data to given addr
+	-Deref of NULL causes runtime error
+
+	-EVERYTHING IN C IS PASS BY VALUE
+	
+	-Can add/subtract from an addr to get a new addr
+	-A+i Where A is a pointer = 0x100, i is an int (x86-64)
+		*(A + i) ==*(&A[i])
+		*(A + i) = A[i]
+		
+	-Rule of thumb: cast pointer eplicitly to avoid confusion.
+
+Structs:
+	-Collection of values placed under one name in a single block of memory
+		Can put structs, arrays in other structs
+	-Given a struct instance, access the fields using the '.' operator
+	-Given a struct pointer, access the fields using the '->' operator
+
+Arrays/Strings:
+	-Arrays: Fixed-size collection of elems of the same type.
+		-can allocate on stack or heap
+
+	-Strings: Null-character ('\0') <-- SEE SLIDES
+
+Casting:
+	-Can cast a variable to different type.
+	-Manually cast if any issues may occur.
+	-Don't cast a pointer to a larger type and deref. You'll be manipulating data outside of scope.
+
+Malloc, Free, Callock
+	-Mallock allocates memory without initializing
+	-Calloc allocates and inits to zero
+	-Free will unallocate memory.
+
+Memory mangement rules:
+	-Malloc what you free, free what you malloc.
+	-|malloc_calls| = |free_calls|. Cardinality of both sets should be equal.
+	-Free a malloced block exactly once. Don't deref a free block.
+
+Stack VS Heap Allocation:
+	-Local vars and funct args on stack
+	-Mem blks allocated by malloc/calloc are always on heap
+	-Globals, constants placed elsewhere
+	-Sample of this in slides.
+
+Typedefs:
+	-Creates an alias type name for a different type
+	-Useful to simplify names of complex data types
+	-Example in slides.
+
+Generic Types:
+	-void* stype is C's provision for generic types
+		-Raw ptr to some mem location
+		-Can'deref a void*
+	-can cast back and forth between void* and other ptr types.
+
+Header Guards:
+	-Double-inclusion problem: include same header file twice
+	-Solution: header guard ensures single inclusion
+	-Sample of this in slides.
+
+				C Libraries (check slides):
+string.h
+stdlib.h
+stdio.h
+
+				Debugging:
+Can use GDB or Valgrind for C!!
+
+				Compilation:
+Use GCC:
+	-g debug infor
+	-Werror <- all warnings as errors
+	-Wall/-Wextra all construction warnings
+	-pedantic adhere to C standarrd
+	
+				Make Files:
+We'll get to that.
+
+				Exceptional Control Flow:
+CPU's simply execute a sequence of instructions until shutdown.
+
+Jumps/branches call/return react to changes in program state
+^Will not react to changes in a system state
+
+Exists at all levels of a computer system:
+	1) Exceptions:
+		Change in ctrl flow in response to a system event
+	2) Process Context switch
+		implemented by OS software and hardware timer
+	3) Signals
+		implemented by OS software
+	4) NonlocalJumps
+		implemented by C runtime library.
+
+				Exceptions:
+Transfer of control to the OS kernel in response to some event.
+	-Kernel <- memory-resident part of the OS
+
+Exception Table <- Table of addrs to differenct exception handler codes.
+
+Asynvhronous Exceptions (interrupts) <- caused by events external to the processor
+	-Timer Interrupt
+		Ever few ms, an external timer chip triggers an interrupt
+		used by the kernel to take back control from user programs
+	-I/O interrupt from external device
+		Hitting Ctrl-C@ the keyboard
+		Arrival of packet from a network.
+
+
+
