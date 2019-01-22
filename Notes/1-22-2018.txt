@@ -22,10 +22,10 @@ Pointers:
 		*(A + i) ==*(&A[i])
 		*(A + i) = A[i]
 		
-	-Rule of thumb: cast pointer eplicitly to avoid confusion.
+	-Rule of thumb: cast pointer explicitly to avoid confusion.
 
 Structs:
-	-Collection of values placed under one name in a single block of memory
+	-Are a collection of values placed under one name in a single block of memory
 		Can put structs, arrays in other structs
 	-Given a struct instance, access the fields using the '.' operator
 	-Given a struct pointer, access the fields using the '->' operator
@@ -34,7 +34,8 @@ Arrays/Strings:
 	-Arrays: Fixed-size collection of elems of the same type.
 		-can allocate on stack or heap
 
-	-Strings: Null-character ('\0') <-- SEE SLIDES
+	-Strings: Null-character ('\0') terminated character arrays
+		-null-character tells us where the string ends
 
 Casting:
 	-Can cast a variable to different type.
