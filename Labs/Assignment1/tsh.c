@@ -68,6 +68,11 @@ app_error(char* msg);
 handler_t*
 Signal(int signum, handler_t* handler);
 
+void
+eval (char *cmdline);
+
+int builtin_command(char **argv);
+
 /*
  *******************************************************************************
  * MAIN
@@ -81,12 +86,26 @@ main (int argc, char** argv)
   dup2 (1, 2);
 
   /* Install signal handlers */
-  Signal (SIGINT, sigint_handler);   /* ctrl-c */
-  Signal (SIGTSTP, sigtstp_handler); /* ctrl-z */
-  Signal (SIGCHLD, sigchld_handler); /* Terminated or stopped child */
-  Signal (SIGQUIT, sigquit_handler); /* quit */
+  //Signal (SIGINT, sigint_handler);   /* ctrl-c */
+  //Signal (SIGTSTP, sigtstp_handler); /* ctrl-z */
+  //Signal (SIGCHLD, sigchld_handler); /* Terminated or stopped child */
+  //Signal (SIGQUIT, sigquit_handler); /* quit */
 
   /* TODO -- shell goes here*/
+
+  char cmdline[MAXLINE];
+
+  while (1){
+
+	printf("~> ");
+	fgets(cmdline, MAXLINE, stdin);
+	if(feof(stdin))
+		exit(0);
+	//^Read
+	
+	eval(cmdline);
+
+  }
 
   /* Quit */
   exit (0);
@@ -206,6 +225,48 @@ sigtstp_handler (int sig)
  */
 
 
+/*
+ * eval - evaluate entered shell commands
+ */
+void
+eval (char *cmdline){
+
+	char *argv[MAXLINE];
+	char buf[MAXLINE];
+	int bg;
+	pid_t pid;
+
+	strcpy(buf, cmdline);
+	bg = parseline(buf, argv);
+	if (argv[0] == NULL)
+		return;
+
+	if(!builtin_command(argv)){
+		if ((pid = fork()) == 0){
+			if (execve(argv[0], argv, environ) < 0) {
+				printf("%s; Command not found. \n", argv[0]);
+				exit(0);
+			}
+		}
+		if (!bg) {
+			int status;
+			if (waitpid(pid, status, 0) < 0)
+				unix_error("waitfg: waitpid error");
+		}
+		else
+			printf("%d %s", pid, cmdline);
+	}
+	return;
+}
+
+int builtin_command(char **argv)
+{
+	if (!strcmp(argv[0], "quit"))
+		exit(0);
+	if(!strcmp(argv[0], "&"))
+		return 1;
+	return 0;
+}
 /*
  * unix_error - unix-style error routine
  */
