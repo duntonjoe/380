@@ -124,3 +124,83 @@ Asynvhronous Exceptions (interrupts) <- caused by events external to the process
 
 
 
+1-24-2018
+---------
+
+Synchronous Exceptions - caused by events that ocur as a result of executing an instruction.
+
+	Traps (intentional, return ctrl to "next" ins) e.g. breakpoints
+	Faults (unintentional but possibly recoverable) e.g. floating point exceptions
+	Aborts (unintentional and unrecoverable) e.g. machine check, parity error.
+
+	system calls (SLIDES)
+
+	
+				PROCESSES
+process - instance of a running program. Allows each program to posses:
+	1)Logical Control Flow - each program seems to have exclusive CPU usage
+	2)Private address space - each program seems to have exclusive use of main memory.
+
+Concurrent processes - each process is a logical ctrl flow
+	Two proessses run concurrently if their flows overlap in time
+	otherwise, they are sequential.
+
+Context Switching - ctrl flow passes from one process to another via a context switch.
+
+				PROCESS CONTROL
+Should check return status of every system lvl function.
+	Check slides for pid methods.
+
+Process States:
+	Running - executing or waiting to be executed and will eventually be scheduled
+	Stopped - waiting and will not be scheduled until further notice
+	Terminated - stopped permanently.
+
+Process can be terminated for 3 reasons:
+	1) receiving a signal that terminates
+	2) returning from "main" routine
+	3) calling "exit" function
+		Terminates with an exit status of status, returns 0 unless error. does not return.
+
+Creating Processes:
+	Parent Process with create a child process with "fork" command.
+	
+	fork - returns 0 to child process, child's PID returned to parent process.
+		Child gets identical (but separate) copy of parents virtual space & open file descriptors (stdin, stdout, stderror, etc)
+		Child has a different PID than parent.
+		Called "once" returns "twice" (parent and child)
+
+main-->--fork----->-----printf--->----exit|
+	     \---->-----printf--->----exit|
+
+
+					                  -------|print|
+--|printf|----->|fork|------>|printf|------>|fork|--------^------|print|
+		    \------->|printf|------>|fork|--------v------|print|
+							  -------|print|
+		
+				REAPING CHILD PROCESSES
+
+Zombie - When a process terminates,it still consumes system resources.
+
+Reaping - kernal purges zombie child processes, based on exit status info provided by parent of child. (wait or waitpid)
+		If any parent terminates w/out reaping child, then the orphaned child will be reaped by init process
+
+Child can remain active after parent is terminated, must be terminated manually.
+
+wait - parent reaps a child by calling wait
+	Suspends current process until one of it's childen terminates.
+	
+Fork-Join Model - wait for processes to finish until next thing is done.
+
+waitpid - wait for a specific process.
+
+execve(char *filename, char *argv[], char *encv[])
+	^loading & running programs in current process.
+		-exectable file *filename>
+		-argument list *argv
+		-environment vars list *envp
+		-Overwrites code, data & stack, Retains PID, open files, signal context.
+		-Called once, and only returns if there's an error.
+
+
