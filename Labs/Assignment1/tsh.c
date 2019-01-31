@@ -57,6 +57,15 @@ int
 parseline(const char* cmdline, char* *argv);
 
 void
+sigchld_handler (int sig);
+
+void
+sigtstp_handler (int sig);
+
+void
+sigint_handler (int sig);
+
+void
 sigquit_handler(int sig);
 
 void
@@ -86,10 +95,10 @@ main (int argc, char** argv)
   dup2 (1, 2);
 
   /* Install signal handlers */
-  //Signal (SIGINT, sigint_handler);   /* ctrl-c */
-  //Signal (SIGTSTP, sigtstp_handler); /* ctrl-z */
-  //Signal (SIGCHLD, sigchld_handler); /* Terminated or stopped child */
-  //Signal (SIGQUIT, sigquit_handler); /* quit */
+  Signal (SIGINT, sigint_handler);   /* ctrl-c */
+  Signal (SIGTSTP, sigtstp_handler); /* ctrl-z */
+  Signal (SIGCHLD, sigchld_handler); /* Terminated or stopped child */
+  Signal (SIGQUIT, sigquit_handler); /* quit */
 
   /* TODO -- shell goes here*/
 
@@ -204,7 +213,12 @@ sigchld_handler (int sig)
 void
 sigint_handler (int sig)
 {
-  return;
+  if (fork() == 0)
+  {
+	pid_t childPID = getpid();
+	kill(-childPID, SIGINT);
+	exit(0);
+  }
 }
 
 /*
@@ -215,7 +229,12 @@ sigint_handler (int sig)
 void
 sigtstp_handler (int sig)
 {
-  return;
+  if (fork() == 0)
+  {
+	pid_t childPID = getpid();
+	kill(-childPID, SIGTSTP);
+	exit(0);
+  }
 }
 
 /*
