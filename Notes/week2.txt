@@ -1,0 +1,84 @@
+1-29-19
+--------
+
+-Exceptional control flow exists at all levels of the system.
+
+-Init process is first linux process, all things forked from it.
+
+-example shell in notes/book.
+
+-REPL: Read Evaluate Print Loop.
+
+-Example Shell:
+	-Will become zombies when they terminate
+	-Will never be reaped, shell does not toerminate
+	-will make a memory leak that could run out of memory.
+	-Solution: Exceptional Control Flow.
+
+Signal: a small message notifying a process than an event has occured in the system
+	SIGNALS ONLY SENT FROM KERNEL.
+	processes can request signals, not produce.
+
+Kernel sends signals to a destination process by updating
+	some space in the destination process's context.
+
+PENDING - signal sent, not yet recieved.
+
+A process can block the receipt of certain signals.
+
+pending signal is recieved at most once, only when unblocked.
+
+kernal maintains pending & blocked bit vectors in the context of each process.
+	-Pending:
+		kth bit of pending bit will be set when type k signal is delivered.
+		kth bit is unset when type k signal is recieved.
+
+	-Blocked:
+		Can be set & cleared by using sigprocmask function
+		also referred to as "signal mask'.
+
+Every process belongs to exactly one process group.
+
+			RECEIVING SIGNALS:
+
+pnb - pending & ~(blocked) signals.
+
+if pnd >= 1,
+	pass control to next instruction in logical control flow for process p
+else
+	choose least nonzero bit in pnb & force p to receive signal k
+	The receipt of the signal triggers some action by process p
+	repeat for all nonzero k in pnb
+	pass ctrl to next instruct in logical flow for process p.
+
+every signal type has predefined default actions.
+
+calling fork in signal handler with fork running process.
+
+signal handlers can be interrupted by other handlers.
+
+block interrupts when handling child process completion.
+
+kernal blocks signals of type currently being handled.
+
+e.g. sigint can't be interrupted by signint
+
+sigprocmask supported by:
+	sigemptyset
+	sigfillset
+	sigaddset	
+	sigdelset
+
+Handlers:
+	-Keep 'em simple
+	-call async-signal-safe functions in handlers
+	-save & restore errno on entry and exit
+	-protect access to shared data structs by temporarily blocking all signals.
+	-declare global variables as volatile (don't put them in register).
+
+Async-Signal-Safety:
+	-only Async signal safe if reentrant or non=interruptible by signals.
+	-_exit, write, wait, waitpid, sleep, kill
+
+
+
