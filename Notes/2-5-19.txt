@@ -1,0 +1,57 @@
+2-5-19
+-------
+
+How linux uses page tables and virt mem.
+
+Lab Part 1: due sunday.
+	^Child handler - only thing that should call waitpid.
+
+
+Breakdown of kernel vs process virtual memory <--SEE SLIDES.
+
+linux organizes Virt Mem as a collection of "areas"
+	-PGD:
+		page global directory address
+	-VM_PROT:
+		read/write permissions for this area
+	-VM_FLAGS;
+		pages shared with other processes or private to this process
+
+seg fault -> accessing a non-existing page
+
+protection exception -> violating permission by writing to a read-only page (linux still says seg fault)
+
+normal page fault -> reading from an area not currenlty in page table, must fetch.
+
+VN ares initialized by associating them with disk objects.
+	-process is known as memory mapping.
+
+Area can be backed by:
+	Regular file: phsysical existing file.
+
+	Anonymous file: is actually nothing.
+			first fult allocates a pysical page full of 0's
+			once the page is dirtied, behaves like any other page.
+
+Private Copy on write objects:
+	Copying deferred as long as possible!
+
+fork creates: 
+	exact copies of current mm_struct, vm_area_struct, and page tables.
+	flag each page i both processes as read-only
+	flag each vm_area_struct in both processes as private COW
+
+	-On return, each process has exact copy of virt mem.
+
+execve:
+	free vm_are_struct's and page tables of old areas
+	create vm_area_struct's and page tables for new areas
+	set PC to entry point in .text
+		Linux will fault in code and data pages where needed.
+
+mmap - map memory at user lvl
+	Specify start, protection, flags
+	Returns apointerto start of mapped area (may not be start).
+
+
+
