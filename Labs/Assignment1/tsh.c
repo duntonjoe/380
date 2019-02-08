@@ -112,12 +112,10 @@ main (int argc, char** argv)
 
   while (1){
 
-	printf("~> ");
+	printf("tsh> ");
 	fgets(cmdline, MAXLINE, stdin);
 	if(feof(stdin))
 		exit(0);
-	//^Read
-	
 	eval(cmdline);
 
   }
@@ -218,11 +216,11 @@ sigchld_handler (int sig)
  			 }
  		else if (WIFSIGNALED (status))
   			 {
-				 //what to do if terminated
+				 //do shit if interrupted	 
  			 }
   		else if (WIFEXITED (status))
   		 	 {
-				 //what to do if it's done
+				 running_pid = 0;
      			 }
 	}
 }
@@ -235,7 +233,7 @@ sigchld_handler (int sig)
 void
 sigint_handler (int sig)
 {
-  if (fork() == 0)
+  if (running_pid != 0)
   {
 	kill(-running_pid, SIGINT);
 	exit(0);
@@ -250,7 +248,7 @@ sigint_handler (int sig)
 void
 sigtstp_handler (int sig)
 {
-  if (fork() == 0)
+  if (running_pid != 0)
   {
 	kill(-running_pid, SIGTSTP);
 	exit(0);
