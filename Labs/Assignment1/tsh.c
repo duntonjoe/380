@@ -111,16 +111,12 @@ main (int argc, char** argv)
   char cmdline[MAXLINE];
 
   while (1){
-
 	printf("tsh> ");
 	fgets(cmdline, MAXLINE, stdin);
 	if(feof(stdin))
 		exit(0);
 	eval(cmdline);
-
   }
-
-  /* Quit */
   exit (0);
 }
 
@@ -213,14 +209,17 @@ sigchld_handler (int sig)
 		if (WIFSTOPPED (status))
  			 {
 				 //what to do if stopped
+				printf("Job (%d) stopped by signal %d\n");
  			 }
  		else if (WIFSIGNALED (status))
   			 {
-				 //do shit if interrupted	 
+				 //do shit if interrupted
+				 printf("Job (%d) terminated by signal %d\n");	 
  			 }
   		else if (WIFEXITED (status))
   		 	 {
-				 running_pid = 0;
+				printf("%d %s\n");
+				running_pid = 0;
      			 }
 	}
 }
