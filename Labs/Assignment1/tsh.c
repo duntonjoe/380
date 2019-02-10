@@ -210,15 +210,18 @@ sigchld_handler (int sig)
  			 {
 				 //what to do if stopped
 				printf("Job (%d) stopped by signal %d\n");
+				fflush(stdout);
  			 }
  		else if (WIFSIGNALED (status))
   			 {
-				 //do shit if interrupted
-				 printf("Job (%d) terminated by signal %d\n");	 
+				//do shit if interrupted
+				printf("Job (%d) terminated by signal %d\n");
+				fflush(stdout);	 
  			 }
   		else if (WIFEXITED (status))
   		 	 {
 				printf("%d %s\n");
+				fflush(stdout);
 				running_pid = 0;
      			 }
 	}
@@ -250,7 +253,7 @@ sigtstp_handler (int sig)
   if (running_pid != 0)
   {
 	kill(-running_pid, SIGTSTP);
-	exit(0);
+	return;
   }
 }
 
@@ -271,6 +274,9 @@ eval (char *cmdline){
 	char buf[MAXLINE];
 	int bg;
 	pid_t pid;
+	sigset_t blockChild;
+	sigemptyset(&blockchild);
+	sigaddset(&blockchild, SIGCHILD);
 
 	strcpy(buf, cmdline);
 	bg = parseline(buf, argv);
@@ -278,9 +284,11 @@ eval (char *cmdline){
 		return;
 
 	if(!builtin_command(argv)){
+		sigprocmask(SIG_BLOCK, &blockChild, NULL);
 		if ((pid = fork()) == 0){
 			if (running_pid = (execve(argv[0], argv, environ)) < 0) {
 				printf("%s; Command not found. \n", argv[0]);
+				fflush(stdout);
 				exit(0);
 			}
 		}
@@ -289,6 +297,7 @@ eval (char *cmdline){
 		}
 		else
 			printf("%d %s", pid, cmdline);
+			fflush(stdout);
 	}
 	return;
 }
