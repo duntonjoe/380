@@ -87,7 +87,7 @@ int
 builtin_command(char **argv);
 
 void
-waitfg (pid_t pid);
+waitfg ();
 /*
  *******************************************************************************
  * MAIN
@@ -111,7 +111,7 @@ main (int argc, char** argv)
   char cmdline[MAXLINE];
 
   while (1){
-	printf("tsh> ");
+	printf("%s",prompt);			// %s uses pointer arithmetic to advance through prompt[] and print, that's cool.
 	fgets(cmdline, MAXLINE, stdin);
 	if(feof(stdin))
 		exit(0);
@@ -208,21 +208,26 @@ sigchld_handler (int sig)
 	{
 		if (WIFSTOPPED (status))
  			 {
-				 //what to do if stopped
-				printf("Job (%d) stopped by signal %d\n");
+				//what to do if stopped
+				printf("Job (%d) stopped by signal %d\n", running_pid, sig);
 				fflush(stdout);
  			 }
  		else if (WIFSIGNALED (status))
   			 {
 				//do shit if interrupted
-				printf("Job (%d) terminated by signal %d\n");
-				fflush(stdout);	 
+				printf("Job (%d) terminated by signal %d\n", running_pid, sig);
+				fflush(stdout);
+				if(running_pid == pid)
+				{
+					running_pid = 0;
+				}
  			 }
   		else if (WIFEXITED (status))
   		 	 {
-				printf("%d %s\n");
-				fflush(stdout);
-				running_pid = 0;
+				if(running_pid == pid)
+				{
+					running_pid = 0;
+				}
      			 }
 	}
 }
@@ -238,7 +243,7 @@ sigint_handler (int sig)
   if (running_pid != 0)
   {
 	kill(-running_pid, SIGINT);
-	exit(0);
+	interrupted = 1;
   }
 }
 
@@ -253,7 +258,7 @@ sigtstp_handler (int sig)
   if (running_pid != 0)
   {
 	kill(-running_pid, SIGTSTP);
-	return;
+	interrupted = 1;
   }
 }
 
@@ -274,29 +279,35 @@ eval (char *cmdline){
 	char buf[MAXLINE];
 	int bg;
 	pid_t pid;
-	sigset_t blockChild;
-	sigemptyset(&blockchild);
-	sigaddset(&blockchild, SIGCHILD);
 
+	sigset_t mask;
+	sigset_t prevMask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGCHLD);
+	sigaddset(&mask, SIGTSTP);
+	sigaddset(&mask, SIGINT);
 	strcpy(buf, cmdline);
 	bg = parseline(buf, argv);
 	if (argv[0] == NULL)
 		return;
-
 	if(!builtin_command(argv)){
-		sigprocmask(SIG_BLOCK, &blockChild, NULL);
+		sigprocmask(SIG_BLOCK, &mask, &prevMask);
 		if ((pid = fork()) == 0){
-			if (running_pid = (execve(argv[0], argv, environ)) < 0) {
+			sigprocmask(SIG_SETMASK, &prevMask, NULL);
+			setpgid(0, 0);
+			if (execve(argv[0], argv, environ) < 0) {
 				printf("%s; Command not found. \n", argv[0]);
 				fflush(stdout);
 				exit(0);
 			}
 		}
+		running_pid = pid;
+		sigprocmask(SIG_SETMASK, &prevMask, NULL);
 		if (!bg) {
 			waitfg(pid);
 		}
 		else
-			printf("%d %s", pid, cmdline);
+			printf("(%d) %s", pid, cmdline);
 			fflush(stdout);
 	}
 	return;
@@ -310,8 +321,11 @@ int builtin_command(char **argv)
 	}
 	if(!strcmp(argv[0], "fg"))
 	{
-		kill(-running_pid, SIGCONT);
-		waitfg(-running_pid);
+		if(running_pid != 0)
+		{
+			kill(-running_pid, SIGCONT);
+			waitfg();	
+		}
 		return 1;
 	}
 	else if(!strcmp(argv[0], "&"))
@@ -326,12 +340,13 @@ int builtin_command(char **argv)
 }
 
 void
-waitfg (pid_t pid)
+waitfg ()
 {
 	//while runnig & not interrupted, suspend. call sig suspend in a while loop. if running pid is 0, stop waiting.
 	sig_t mask;
 	sigemptyset(&mask);
-	while(running_pid == pid && !interrupted)
+	interrupted = 0;
+	while(running_pid != 0 && !interrupted)
 	{
 		sigsuspend(&mask);
 	}
