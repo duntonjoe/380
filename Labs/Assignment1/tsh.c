@@ -88,6 +88,10 @@ builtin_command(char **argv);
 
 void
 waitfg ();
+
+pid_t
+Fork(void);
+
 /*
  *******************************************************************************
  * MAIN
@@ -111,7 +115,7 @@ main (int argc, char** argv)
   char cmdline[MAXLINE];
 
   while (1){
-	printf("%s",prompt);			// %s uses pointer arithmetic to advance through prompt[] and print, that's cool.
+	printf("%s",prompt);			
 	fgets(cmdline, MAXLINE, stdin);
 	if(feof(stdin))
 		exit(0);
@@ -204,18 +208,16 @@ sigchld_handler (int sig)
 {
 	pid_t pid;
 	int status;
-	while((pid = waitpid (-1, &status, WNOHANG | WUNTRACED)) > 0 )
+	while((pid = waitpid (-1, &status, WNOHANG|WUNTRACED)) > 0 )
 	{
-		if (WIFSTOPPED (status))
+		if (WIFSTOPPED(status))
  			 {
-				//what to do if stopped
-				printf("Job (%d) stopped by signal %d\n", running_pid, sig);
+				printf("Job (%d) stopped by signal %d\n", running_pid, WSTOPSIG(status));
 				fflush(stdout);
  			 }
  		else if (WIFSIGNALED (status))
   			 {
-				//do shit if interrupted
-				printf("Job (%d) terminated by signal %d\n", running_pid, sig);
+				printf("Job (%d) terminated by signal %d\n", running_pid, WTERMSIG(status));
 				fflush(stdout);
 				if(running_pid == pid)
 				{
@@ -271,11 +273,13 @@ sigtstp_handler (int sig)
 
 /*
  * eval - evaluate entered shell commands
+ *
+ * takes *cmdline, the line of shell input to be evaluated.
  */
 void
 eval (char *cmdline){
 
-	char *argv[MAXLINE];
+	char *argv[MAXARGS];
 	char buf[MAXLINE];
 	int bg;
 	pid_t pid;
@@ -286,33 +290,45 @@ eval (char *cmdline){
 	sigaddset(&mask, SIGCHLD);
 	sigaddset(&mask, SIGTSTP);
 	sigaddset(&mask, SIGINT);
+	sigprocmask(SIG_BLOCK, &mask, &prevMask);
+
 	strcpy(buf, cmdline);
 	bg = parseline(buf, argv);
+
 	if (argv[0] == NULL)
 		return;
 	if(!builtin_command(argv)){
-		sigprocmask(SIG_BLOCK, &mask, &prevMask);
-		if ((pid = fork()) == 0){
+
+		if ((pid = Fork()) == 0){
+
 			sigprocmask(SIG_SETMASK, &prevMask, NULL);
 			setpgid(0, 0);
+
 			if (execve(argv[0], argv, environ) < 0) {
-				printf("%s; Command not found. \n", argv[0]);
+				printf("%s: Command not found\n", argv[0]);
 				fflush(stdout);
-				exit(0);
 			}
 		}
+
 		running_pid = pid;
 		sigprocmask(SIG_SETMASK, &prevMask, NULL);
+		
 		if (!bg) {
-			waitfg(pid);
+			waitfg();
 		}
 		else
+		{
 			printf("(%d) %s", pid, cmdline);
 			fflush(stdout);
+		}
 	}
-	return;
 }
 
+/*
+ * builtin_command - allows features like "quit" and "fg" to be immediatly evaluated.
+ *
+ * takes argv, a potential built-in command
+*/
 int builtin_command(char **argv)
 {
 	if (!strcmp(argv[0], "quit"))
@@ -332,24 +348,36 @@ int builtin_command(char **argv)
 	{
 		return 1;
 	}
-	else if (!strcmp(argv[0], ""))
-	{
-		return 1;
-	}
 	return 0;
 }
 
+/*
+ * waitfg - waitfg makes the shell wait for a foreground process to finish, takes in no parameters.
+*/
 void
 waitfg ()
 {
 	//while runnig & not interrupted, suspend. call sig suspend in a while loop. if running pid is 0, stop waiting.
-	sig_t mask;
+	sigset_t mask;
 	sigemptyset(&mask);
 	interrupted = 0;
 	while(running_pid != 0 && !interrupted)
 	{
 		sigsuspend(&mask);
 	}
+}
+
+/*
+ *Fork - wrapper class for the fork() function
+*/
+pid_t
+Fork(void)
+{
+	pid_t pid;
+
+	if((pid=fork()) < 0)
+		unix_error("Fork Error");
+	return pid;
 }
 
 /*

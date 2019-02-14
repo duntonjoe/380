@@ -1,0 +1,36 @@
+#
+# trace17.txt - Tests the built-in kill command (extra credit version)
+#
+
+/bin/echo -e tsh> /bin/sleep 20 \046
+/bin/sleep 20 &
+
+/bin/echo tsh> /bin/ps ux
+/bin/ps ux
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> kill -20 %1
+kill -20 %1
+
+/bin/echo tsh> /bin/ps ux
+/bin/ps ux
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> kill -18 %1
+kill -18 %1
+
+
+/bin/echo tsh> /bin/ps ux
+/bin/ps ux
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> kill -9 %1
+kill -9 %1
+
+/bin/echo tsh> /bin/ps ux
+/bin/ps ux
+/bin/echo tsh> jobs
+jobs

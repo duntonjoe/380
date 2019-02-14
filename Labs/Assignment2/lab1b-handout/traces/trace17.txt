@@ -1,0 +1,18 @@
+#
+# trace17.txt - Tests the built-in kill command (should forward SIGTERM)
+#
+
+/bin/echo -e tsh> /bin/sleep 20 \046
+/bin/sleep 20 &
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> kill %1
+kill %1
+
+/bin/echo tsh> jobs
+jobs
+
+/bin/echo tsh> /bin/ps ux
+/bin/ps ux
