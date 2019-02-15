@@ -104,9 +104,6 @@ waitfg (pid_t pid);
 pid_t
 Fork(void);
 
-void
-jobs();
-
 /*
  *******************************************************************************
  * MAIN
@@ -297,8 +294,8 @@ sigchld_handler (int sig)
  			 }
   		else if (WIFEXITED (status))
   		 	 {
-				 fg_pid = jobctrl_fgpid();
-				 jobctrl_delete(fg_pid);
+				 //jobctrl_delete is passed the converted foreground pid. Sorry it's a mess.
+				 jobctrl_delete ( jobctrl_pid2jid( jobctrl_fgpid() ) );
      			 }
 	}
 }
@@ -352,6 +349,7 @@ eval (char *cmdline){
 	char *argv[MAXARGS];
 	char buf[MAXLINE];
 	int bg;
+	int validCmd = 1;
 	pid_t pid;
 	sigset_t mask;
 	sigset_t prevMask;
@@ -371,11 +369,19 @@ eval (char *cmdline){
 			if (execve(argv[0], argv, environ) < 0) {
 				printf("%s: Command not found\n", argv[0]);
 				fflush(stdout);
+				printf("\nvalidCmd: (%d)\n", validCmd);
+				fflush(stdout);
 			}
 		}
 		sigprocmask(SIG_SETMASK, &prevMask, NULL);
-		if (!bg) {
+		if (!bg) 
+		{
 			waitfg(pid);
+		}
+		else if(validCmd)
+		{
+			jobctrl_add(pid, (bg += 1), cmdline);
+
 		}
 		else
 		{
@@ -409,7 +415,7 @@ int builtin_command(char **argv)
 	}
 	if(!strcmp(argv[0], "jobs"))
 	{
-		jobs();
+		jobctrl_list();
 		return 1;
 	}
 	else if(!strcmp(argv[0], "&"))
@@ -448,11 +454,3 @@ Fork(void)
 	return pid;
 }
 
-/*
- *Jobs - prints a list of all jobs.
-*/
-void
-jobs()
-{
-	jobctrl_list();
-}
