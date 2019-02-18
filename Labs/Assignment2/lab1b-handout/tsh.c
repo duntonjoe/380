@@ -278,24 +278,23 @@ sigchld_handler (int sig)
 {
 	pid_t pid;
 	int status;
-	int fg_pid;
 	while((pid = waitpid (-1, &status, WNOHANG|WUNTRACED)) > 0 )
 	{
 		if (WIFSTOPPED(status))
  			 {
-				printf("Job (%d) stopped by signal %d\n", (fg_pid = jobctrl_fgpid()), WSTOPSIG(status));
+				printf(CHLD_STOP_MSG, jobctrl_pid2jid(pid), pid, WSTOPSIG(status));
 				fflush(stdout);
+				jobctrl_get_by_pid(pid) -> state = ST;
  			 }
  		else if (WIFSIGNALED (status))
   			 {
-				printf("Job (%d) terminated by signal %d\n", (fg_pid = jobctrl_fgpid()), WTERMSIG(status));
+				printf(CHLD_TERM_MSG, jobctrl_pid2jid(pid), pid, WTERMSIG(status));
 				fflush(stdout);
-				jobctrl_delete(fg_pid);
+				jobctrl_delete(pid);
  			 }
   		else if (WIFEXITED (status))
   		 	 {
-				 //jobctrl_delete is passed the converted foreground pid. Sorry it's a mess.
-				 jobctrl_delete ( jobctrl_pid2jid( jobctrl_fgpid() ) );
+				jobctrl_delete(pid);
      			 }
 	}
 }
@@ -312,7 +311,6 @@ sigint_handler (int sig)
   if ((fg_job = jobctrl_fgpid()) != 0)
   {
 	kill(-fg_job, SIGINT);
-	jobctrl_delete(fg_job);
   }
 }
 
@@ -328,7 +326,6 @@ sigtstp_handler (int sig)
   if ((fg_job = jobctrl_fgpid()) != 0)
   {
 	kill(-fg_job, SIGTSTP);
-	jobctrl_delete(fg_job);
   }
 }
 
@@ -349,7 +346,6 @@ eval (char *cmdline){
 	char *argv[MAXARGS];
 	char buf[MAXLINE];
 	int bg;
-	int validCmd = 1;
 	pid_t pid;
 	sigset_t mask;
 	sigset_t prevMask;
@@ -367,25 +363,20 @@ eval (char *cmdline){
 			sigprocmask(SIG_SETMASK, &prevMask, NULL);
 			setpgid(0, 0);
 			if (execve(argv[0], argv, environ) < 0) {
-				printf("%s: Command not found\n", argv[0]);
-				fflush(stdout);
-				printf("\nvalidCmd: (%d)\n", validCmd);
+				printf(BAD_CMD, argv[0]);
 				fflush(stdout);
 			}
 		}
 		sigprocmask(SIG_SETMASK, &prevMask, NULL);
 		if (!bg) 
 		{
+			jobctrl_add(pid, FG, cmdline);
 			waitfg(pid);
-		}
-		else if(validCmd)
-		{
-			jobctrl_add(pid, (bg += 1), cmdline);
-
 		}
 		else
 		{
-			printf("(%d) %s", pid, cmdline);
+			jobctrl_add(pid, BG, cmdline);
+			printf(BG_DISPLAY, jobctrl_pid2jid(pid), pid, cmdline);
 			fflush(stdout);
 		}
 	}
