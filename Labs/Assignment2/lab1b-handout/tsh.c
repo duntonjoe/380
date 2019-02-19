@@ -104,6 +104,9 @@ waitfg (pid_t pid);
 pid_t
 Fork(void);
 
+void
+doBgFgKill(char **argv, int sig);
+
 /*
  *******************************************************************************
  * MAIN
@@ -288,9 +291,9 @@ sigchld_handler (int sig)
  			 }
  		else if (WIFSIGNALED (status))
   			 {
+				jobctrl_delete(pid);
 				printf(CHLD_TERM_MSG, jobctrl_pid2jid(pid), pid, WTERMSIG(status));
 				fflush(stdout);
-				jobctrl_delete(pid);
  			 }
   		else if (WIFEXITED (status))
   		 	 {
@@ -389,19 +392,23 @@ eval (char *cmdline){
 */
 int builtin_command(char **argv)
 {
-	pid_t fg_pid;
-
 	if (!strcmp(argv[0], "quit"))
 	{
 		exit(0);
 	}
 	if(!strcmp(argv[0], "fg"))
 	{
-		if((fg_pid = jobctrl_fgpid()) != 0)
-		{
-			kill(-fg_pid, SIGCONT);
-			waitfg(fg_pid);
-		}
+		doBgFgKill(argv, SIGCONT);
+		return 1;
+	}
+	if(!strcmp(argv[0], "bg"))
+	{	
+		doBgFgKill(argv, SIGCONT);
+		return 1;
+	}
+	if(!strcmp(argv[0], "kill"))
+	{
+		doBgFgKill(argv, SIGINT);
 		return 1;
 	}
 	if(!strcmp(argv[0], "jobs"))
@@ -445,3 +452,35 @@ Fork(void)
 	return pid;
 }
 
+/*
+ *doBgFg - actual work done by bg, fg, and kill commands. 
+*/
+void
+doBgFgKill(char **argv, int sig)
+{
+	jobctrl_job_t* targetJob;
+	if(argv[1] != NULL)
+	{
+		if(argv[1][0] == '%')
+		{
+			int parsedJID = atoi(argv[1] + 1);
+			if((targetJob = jobctrl_get_by_jid(parsedJID)) == 0)
+			{
+				printf(FG_BG_KILL_NOJID, argv[1]);
+				return;
+			}
+		}
+		else
+		{
+			int parsedPID = atoi(argv[1]);
+			if((targetJob = jobctrl_get_by_pid(parsedPID)) == 0)
+			{
+				printf(FG_BG_KILL_NOPID, parsedPID);
+				return;
+			}
+		}
+		kill(targetJob->pid, sig);
+	}
+	
+
+}
