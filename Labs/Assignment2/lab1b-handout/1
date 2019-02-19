@@ -104,7 +104,7 @@ waitfg (pid_t pid);
 pid_t
 Fork(void);
 
-jobctrl_job_t*
+void
 doBgFgKill(char **argv, int sig);
 
 /*
@@ -291,9 +291,9 @@ sigchld_handler (int sig)
  			 }
  		else if (WIFSIGNALED (status))
   			 {
+				jobctrl_delete(pid);
 				printf(CHLD_TERM_MSG, jobctrl_pid2jid(pid), pid, WTERMSIG(status));
 				fflush(stdout);
-				jobctrl_delete(pid);	
  			 }
   		else if (WIFEXITED (status))
   		 	 {
@@ -398,13 +398,12 @@ int builtin_command(char **argv)
 	}
 	if(!strcmp(argv[0], "fg"))
 	{
-		doBgFgKill(argv, SIGCONT) -> state = FG;
-		waitfg(jobctrl_fgpid());
+		doBgFgKill(argv, SIGCONT);
 		return 1;
 	}
 	if(!strcmp(argv[0], "bg"))
 	{	
-		doBgFgKill(argv, SIGCONT) -> state = BG;
+		doBgFgKill(argv, SIGCONT);
 		return 1;
 	}
 	if(!strcmp(argv[0], "kill"))
@@ -456,7 +455,7 @@ Fork(void)
 /*
  *doBgFg - actual work done by bg, fg, and kill commands. 
 */
-jobctrl_job_t*
+void
 doBgFgKill(char **argv, int sig)
 {
 	jobctrl_job_t* targetJob;
@@ -468,7 +467,7 @@ doBgFgKill(char **argv, int sig)
 			if((targetJob = jobctrl_get_by_jid(parsedJID)) == 0)
 			{
 				printf(FG_BG_KILL_NOJID, argv[1]);
-				return 0;
+				return;
 			}
 		}
 		else
@@ -477,14 +476,11 @@ doBgFgKill(char **argv, int sig)
 			if((targetJob = jobctrl_get_by_pid(parsedPID)) == 0)
 			{
 				printf(FG_BG_KILL_NOPID, parsedPID);
-				return 0;
+				return;
 			}
 		}
 		kill(targetJob->pid, sig);
-		return targetJob;
 	}
-	else
-		return 0;
 	
 
 }
