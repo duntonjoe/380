@@ -16,7 +16,7 @@ sem_wait (struct semaphore* s)
   s->count -= 1;
   if(s->count < 0){
 	mutex_signal(&s->mutex);
-	mutex_wait(&s->mutex);
+	mutex_wait(&s->delay);
   }
   mutex_signal(&s->mutex);
 }
@@ -26,7 +26,7 @@ sem_signal (struct semaphore* s)
 {
   // TODO
   mutex_wait(&s->mutex);
-  s-> count += 1;
+  s->count += 1;
   if(s->count <= 0){
 	mutex_signal(&s->delay);
   }
