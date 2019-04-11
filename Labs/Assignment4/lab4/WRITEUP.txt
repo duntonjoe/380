@@ -1,11 +1,32 @@
-Name:
-Date:
+Name:	Joseph "Joey" Dunton
+Date:	4-4-19
 
 Semaphore Writeup [10 pts]
 --------------------------
 
+1)In option 1 that i selected, wait() has 1 wait and 1 signal call when the semaphore is available.
+When the semaphore is unavailable, it has 2 wait and 2 signal calls. This is because when the semaphore
+is unavailable, threads are deferred to the delay mutex. This is opposed to option two, which immediately
+deffers the thread, and then checks to see if the semiphore has available space a thread.
 
+2)In any situation, option 1's signal() will have 1 wait and 1 signal call. We always lock mutex, then if 
+the semaphore isn't available, we defer to the delay mutex. Otherwise we signal the mutex.
+
+3)I selected option 1 because grabbing all resources and then checking if we need to defer to delay 
+seems more efficient than immediatly deferring to delay every time sem_wait or sem_signal is called.
 
 
 Queue Writeup [15 pts]
 ----------------------
+
+Design:
+I initialized my queue with a Mutex for buffer access, a counting semaphore for the available slots,
+and a counting semaphore for the items. This seems to make sense, as buffer access is binary, but each
+semaphore can have N slots, and thus at most N items.
+
+Performance:
+-add(): this waits for an available slot, then grabs the mutex for buffer access, writes the new element, updates the item count, then releases the mutex.
+
+-remove(): this waits for an available item, grabs the mutex, removes the item, updates slot availability, then releases the mutex.
+
+-peek(): waits for an item, grabs the mutex, reads item, releases mutex, and signals the item semaphore to restore a correct count.
