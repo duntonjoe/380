@@ -23,7 +23,6 @@ make_table (int places)
   // WKK -- END DO NOT CHANGE
 
   // TODO -- add whatever else you need to initialize
-  pthread_mutex_init(&t->mutex, NULL);
 
   return t;
 }
@@ -41,6 +40,16 @@ table_checkin (table_t* t, int id, philosopher_t* p)
 {
   // TODO -- have p aquire its chopsticks safely
   
+  while(1){
+	if (sem_trywait(p->left) == 0){
+		if(sem_trywait(p->right) == 0){
+			break;
+		}
+		else{
+			sem_post(p->left);
+		}
+	}
+  }
   
   // WKK -- BEGIN DO NOT CHANGE
   sem_wait(&t->forks[t->places]);
@@ -60,9 +69,6 @@ table_checkin (table_t* t, int id, philosopher_t* p)
 void
 table_checkout (table_t* t, int id, philosopher_t* p)
 {
-  // TODO -- have p release its chopsticks safely
-
-
   // WKK -- BEGIN DO NOT CHANGE
   sem_wait(&t->forks[t->places]);
   int leftID = p->left - t->forks;
@@ -72,4 +78,7 @@ table_checkout (table_t* t, int id, philosopher_t* p)
   sem_post(&t->forks[t->places]);
   // WKK -- END DO NOT CHANGE
 
+  // TODO -- have p release its chopsticks safely
+  sem_post(p->left);
+  sem_post(p->right);
 }

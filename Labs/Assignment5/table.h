@@ -25,7 +25,6 @@ typedef struct table
   // WKK -- END DO NOT CHANGE
 
   // TODO -- add whatever else you need
-  pthread_mutex_t mutex;
 
 } table_t;
 
