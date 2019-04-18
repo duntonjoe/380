@@ -1,0 +1,13 @@
+WRITEUP:
+-----------
+
+When approaching this problem, I initially decided to implement a waiter as my solution. 
+I understood the psuedocode to this solution rather well, but my translation of it into 
+C was extremely buggy, and I ended up implementing so many fixes that the waiter became 
+useless. I instead utilized C's sem_trywait() function when each philosopher grabs a 
+utensil. This makes sense to me, but it's to my understanding that sem_trywait is a 
+highly inefficient function, as in some cases it will use resourses to fail 
+grabbing the semaphore, and then just sit like wait. My solution would likely be more 
+efficient if I utilized sem_wait() in an elegant way, but alas, this isn't what I did. 
+
+
